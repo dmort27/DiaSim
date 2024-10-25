@@ -38,7 +38,7 @@ public class ErrorAnalysis {
 		// indexes for phones in the following int arrays are above.
 	private boolean[][] isPhInResEt, isPhInGoldEt, isPhInPivEt; 
 		// TODO investigate uses of these. 
-	private List<Etymon[]> mismatches; 
+	private List<Etymon[]> globalMismatches, subsampMismatches; 
 		// TODO investigate uses. 
 
 	private int TOTAL_ETYMA, EVAL_SAMP_SIZE;
@@ -92,7 +92,7 @@ public class ErrorAnalysis {
 			// an ideal case would involve an alignment algorithm to insure that cases where only one 
 					// occurrence of the phone in said word is errant are not being counted multiply
 			// but this is not a priority right now as there are more important things to improve upon given the work necessary to involve that.
-	private int[][] confusionMatrix; 
+	private int[][] confusionMatrix, globalConfusionMatrix; 
 		// rows -- indexed by resPhInds; columns -- indexed by goldPhInds
 		// NOTE: final indices in both dimensions are for the null phone!
 	
@@ -165,9 +165,10 @@ public class ErrorAnalysis {
 		errorRateByGoldPhone = new double[goldPhInventory.length];
 
 		confusionMatrix = new int[resPhInventory.length + 1][goldPhInventory.length + 1];
+		globalConfusionMatrix = new int[resPhInventory.length + 1][goldPhInventory.length + 1];
 		// final indices in both dimensions are for the null phone
 		
-		mismatches = new ArrayList<Etymon[]>();
+		globalMismatches = new ArrayList<Etymon[]>(); subsampMismatches = new ArrayList<Etymon[]>(); 
 		
 		levDists = new int[TOTAL_ETYMA]; 
 		peds = new double[TOTAL_ETYMA];
@@ -215,6 +216,12 @@ public class ErrorAnalysis {
 			}
 			else	isHit[i] = true;
 		}
+		
+		globalMismatches.addAll(subsampMismatches);
+		for (int i =0; i < confusionMatrix.length; i++)
+			for (int j = 0 ; j < confusionMatrix[i].length; j++)
+				globalConfusionMatrix[i][j] = confusionMatrix[i][j]; 		
+		
 		pctAcc = numHits / (double) EVAL_SAMP_SIZE; 
 		pctWithin1 = num1off / (double) EVAL_SAMP_SIZE;
 		pctWithin2 = num2off / (double) EVAL_SAMP_SIZE; 
@@ -257,6 +264,10 @@ public class ErrorAnalysis {
 		FILTER = new int[EVAL_SAMP_SIZE];
 		for (int i = 0 ; i < EVAL_SAMP_SIZE; i++)	FILTER[i] = PRESENT_ETS[i];
 		filterSeq = null;
+		subsampMismatches = new ArrayList<Etymon[]> (globalMismatches);
+		for (int i =0; i < confusionMatrix.length; i++)
+			for (int j = 0 ; j < confusionMatrix[i].length; j++)
+				confusionMatrix[i][j] = globalConfusionMatrix[i][j]; 	
 	}
 	
 	public void setFilter(SequentialFilter newFilt, String filt_name)
@@ -316,7 +327,7 @@ public class ErrorAnalysis {
 		{
 			System.out.println("Error: tried to do confusion diagnosis when there is (somehow) "
 					+ "\n\ta forward reconstructed language with no phonemes in its phonemic inventory."
-					+ "\n\t(This is likely because all etyma ended up with every phone they had deleted."); 
+					+ "\n\t(This is likely because all etyma ended up with every phone they had deleted.\n\n"); 
 			return;
 		}
 		
@@ -324,7 +335,13 @@ public class ErrorAnalysis {
 		{
 			System.out.println("Error: tried to do confusion diagnosis when there is (somehow) "
 					+ "\n\ta gold/observed language with no phonemes in its phonemic inventory."
-					+ "\n\t(This is likely because you have ... no words for the gold, but a gold column, in your lexicon file?"); 
+					+ "\n\t(This is likely because you have ... no words for the gold, but a gold column, in your lexicon file?\n\n"); 
+			return;
+		}
+		if (subsampMismatches.size() == 0)
+		{
+			System.out.println("There are no errors in this sample! (Congrats) "
+					+ "\n\tTherefore error diagnostics cannot be calculated.\n\n"); 
 			return;
 		}
 		
@@ -355,7 +372,7 @@ public class ErrorAnalysis {
 				if (rate < (1.0 - pctAcc) * 1.17)	i = topErrResPhLocs.length; 
 				else	System.out.println(""+i+": /"+resPhInventory[topErrResPhLocs[i]].print()+
 						"/ with rate "+rate+",\tRate present in mismatches : "
-						+(""+(double)errorsByResPhone[topErrResPhLocs[i]]*100.0/(double)mismatches.size()));
+						+(""+(double)errorsByResPhone[topErrResPhLocs[i]]*100.0/(double)subsampMismatches.size()));
 				
 			}
 			System.out.println("Gold phones most associated with error: ");
@@ -365,7 +382,7 @@ public class ErrorAnalysis {
 				if (rate < pctAcc * 1.17)	i = topErrGoldPhLocs.length; 
 				else	System.out.println(""+i+": /"+goldPhInventory[topErrGoldPhLocs[i]].print()+
 						"/ with rate "+rate+",\tRate present in mismatches : "
-						+(""+(double)errorsByGoldPhone[topErrGoldPhLocs[i]]*100.0/(double)mismatches.size()));
+						+(""+(double)errorsByGoldPhone[topErrGoldPhLocs[i]]*100.0/(double)subsampMismatches.size()));
 			}
 			if(pivotSet)
 			{
@@ -376,7 +393,7 @@ public class ErrorAnalysis {
 					if (rate < pctAcc * 1.17)	i = topErrPivotPhLocs.length;
 					else	System.out.println(""+i+": /"+pivotPhInventory[topErrPivotPhLocs[i]].print()+
 							"/ with rate "+rate+",\tRate present in mismatches : "
-							+(""+(double)errorsByPivotPhone[topErrPivotPhLocs[i]]*100.0/(double)mismatches.size()));
+							+(""+(double)errorsByPivotPhone[topErrPivotPhLocs[i]]*100.0/(double)subsampMismatches.size()));
 				}
 			}
 		}
@@ -394,7 +411,7 @@ public class ErrorAnalysis {
 			
 			double wordsWithConfusion = (double)confusionMatrix[topConfusions[i][0]][topConfusions[i][1]];
 					
-			double errorShare = wordsWithConfusion / (double)mismatches.size() * 100.0; 
+			double errorShare = wordsWithConfusion / (double)subsampMismatches.size() * 100.0; 
 			String strErrShare = ""+errorShare; 
 			if (strErrShare.length() > 6)
 				strErrShare = strErrShare.substring(0,6); 
@@ -418,7 +435,7 @@ public class ErrorAnalysis {
 	{
 		Etymon res = RES.getByID(err_id), gold = GOLD.getByID(err_id); 
 		
-		mismatches.add( new Etymon[] {res, gold}) ; 
+		subsampMismatches.add( new Etymon[] {res, gold}) ; 
 				
 		SequentialPhonic[][] alignedForms = getAlignedForms(res,gold); 
 		
@@ -726,7 +743,7 @@ public class ErrorAnalysis {
 	{
 		List<Etymon[]> out = new ArrayList<Etymon[]>(); 
 		boolean is_insert_or_delete = (resPhInd == resPhInventory.length) ||  (goldPhInd == goldPhInventory.length); 
-		for (Etymon[] mismatch : mismatches)
+		for (Etymon[] mismatch : subsampMismatches)
 		{
 			if ( is_insert_or_delete)
 			{	if(hasMismatch(resPhInd, goldPhInd, mismatch[0], mismatch[1]))	out.add(mismatch); 	}
@@ -1022,10 +1039,10 @@ public class ErrorAnalysis {
 	 */
 	public List<Etymon[]> getCurrMismatches( List<SequentialPhonic> targSeq, boolean look_in_gold)
 	{
-		if (targSeq.size() == 0)	return mismatches;
+		if (targSeq.size() == 0)	return subsampMismatches;
 		List<Etymon[]> out = new ArrayList<Etymon[]>(); 
 		int ind = look_in_gold ? 1 : 0; 
-		for (Etymon[] msmtch : mismatches)
+		for (Etymon[] msmtch : subsampMismatches)
 			if (Collections.indexOfSubList( msmtch[ind].getPhonologicalRepresentation(),
 					targSeq) != -1)
 				out.add(new Etymon[] {msmtch[0], msmtch[1]});
@@ -1204,7 +1221,7 @@ public class ErrorAnalysis {
 		int nSSHits = 0, nSSMisses = 0, nSS1off = 0, nSS2off = 0; 
 		double totPED = 0.0 , totFED = 0.0; 
 		FILTER = new int[EVAL_SAMP_SIZE]; 
-		mismatches = new ArrayList<Etymon[]> (); 
+		subsampMismatches = new ArrayList<Etymon[]> (); 
 		confusionMatrix = new int[resPhInventory.length+1][goldPhInventory.length+1];
 		
 		errorsByResPhone = new int[resPhInventory.length];
