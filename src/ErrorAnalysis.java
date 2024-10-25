@@ -312,6 +312,22 @@ public class ErrorAnalysis {
 	//@param get_contexts -- determine if we want to list the most problematic context info
 	public void confusionDiagnosis(boolean get_contexts)
 	{
+		if (resPhInventory.length == 0)
+		{
+			System.out.println("Error: tried to do confusion diagnosis when there is (somehow) "
+					+ "\n\ta forward reconstructed language with no phonemes in its phonemic inventory."
+					+ "\n\t(This is likely because all etyma ended up with every phone they had deleted."); 
+			return;
+		}
+		
+		if (goldPhInventory.length == 0)
+		{
+			System.out.println("Error: tried to do confusion diagnosis when there is (somehow) "
+					+ "\n\ta gold/observed language with no phonemes in its phonemic inventory."
+					+ "\n\t(This is likely because you have ... no words for the gold, but a gold column, in your lexicon file?"); 
+			return;
+		}
+		
 		List<String> inactiveGoldFeats = new ArrayList<String>(); 
 		inactiveGoldFeats = rmvFeatsActiveInSample(inactiveGoldFeats,GOLD);
 		
