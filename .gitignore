@@ -3,7 +3,6 @@
 .local/
 build/
 .project
-.classpath
 .settings/
 build.xml
 bin/

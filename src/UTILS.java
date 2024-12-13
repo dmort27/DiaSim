@@ -37,7 +37,7 @@ public class UTILS {
 	public final static List<String> PSEUDO_ETYM_REPRS = Arrays.asList(ABSENT_REPR, UNATTD_REPR); 	public final static int maxAutoCommentWidth = 150;
 	public static final int PRINTERVAL = 100; 
 	
-	//IPA symbol and feature related variaables. 
+	//IPA symbol and feature related variables. 
 	public static HashMap<String,String[]> DIACRIT_TO_FT_MAP; 
 	public static HashMap<String,String[]> FT_IMPLICATIONS; 	
 	
