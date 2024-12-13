@@ -60,7 +60,7 @@ Additional options:
   
 - `-impl <filename>` -- allows you to use a feature implications file other than the default FeatureImplications (cf. [**Representations**](https://github.com/clmarr/DiaSim/wiki/Representations) on the wiki)
   
-- `-diacrit <filename>` -- allows you to use a custom diacritics file (cf. [**Representations**](https://github.com/clmarr/DiaSim/wiki/Representations) on the wiki)
+- `-diacrit <filename>` -- allows you to use a custom diacritics file (cf. [**Representations**](https://github.com/clmarr/DiaSim/wiki/Representations) on the wiki). If you use just `-diacrit`, the standard diacritics file will be used. 
   
 - `-idcost <a number>` -- sets the cost of insertion and deletion for computing edit distances (cf. [**Metrics**](https://github.com/clmarr/DiaSim/wiki/Metrics) on the wiki)
 
