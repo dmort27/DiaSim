@@ -241,10 +241,7 @@ public class ErrorAnalysis {
 			errorRateByGoldPhone[i] = (double)errorsByGoldPhone[i]
 					/ (double)goldPhCts.get(goldPhInventory[i].print()); 
 		
-		inactiveFeats = new ArrayList<String>(); 
-		for (String fbi : featsByIndex)
-		{	inactiveFeats.add(UTILS.MARK_POS+fbi); inactiveFeats.add(UTILS.MARK_NEG+fbi);	}
-		inactiveFeats = rmvFeatsActiveInSample(inactiveFeats,RES); 
+		inactiveFeats = inactiveFeatList(RES); 
 		inactiveFeats = rmvFeatsActiveInSample(inactiveFeats,GOLD);
 		
 		//TODO Debugging
@@ -316,7 +313,7 @@ public class ErrorAnalysis {
 			}
 			for (int i = 0 ; i < pivotPhInventory.length; i++)
 				errorRateByPivotPhone[i] = (double)errorsByPivotPhone[i] / (double)pivPhCts[i]; 
-			pivotInactiveFeats = rmvFeatsActiveInSample(inactiveFeats, PIV_PT_LEX); 
+			pivotInactiveFeats = inactiveFeatList(PIV_PT_LEX); 
 		}
 	}
 	
@@ -340,14 +337,12 @@ public class ErrorAnalysis {
 		}
 		if (subsampMismatches.size() == 0)
 		{
-			System.out.println("There are no errors in this sample! (Congrats) "
+			System.out.println("There are no errors in this sample! (Congrats!) "
 					+ "\n\tTherefore error diagnostics cannot be calculated.\n\n"); 
 			return;
 		}
 		
-		List<String> inactiveGoldFeats = new ArrayList<String>(); 
-		inactiveGoldFeats = rmvFeatsActiveInSample(inactiveGoldFeats,GOLD);
-		
+		List<String> inactiveGoldFeats = inactiveFeatList(GOLD);
 		
 		int N_CONFS_TO_PRINT = 5; 
 		
@@ -1321,7 +1316,7 @@ public class ErrorAnalysis {
 				errorRateByPivotPhone[i] = (double)errorsByPivotPhone[i] / (double)pivPhCts[i]; 
 		}
 		
-		pivotInactiveFeats = rmvFeatsActiveInSample(inactiveFeats,PIV_PT_LEX);		
+		pivotInactiveFeats = inactiveFeatList(PIV_PT_LEX); 
 	}
 	
 	
@@ -1876,12 +1871,15 @@ public class ErrorAnalysis {
 		double[] scores = new double[candPredictors.length];
 		for(int fi = 0 ; fi < candPredictors.length; fi++)
 		{
+			// if either mark is in pivotInactiveFeats, this feature is INACTIVE, with the value in pivotInactiveFeats listed
 			if(pivotInactiveFeats.contains(UTILS.MARK_POS+candPredictors[fi].substring(1)) 
 					|| pivotInactiveFeats.contains(UTILS.MARK_NEG+candPredictors[fi].substring(1)))
 			{
 				// material below useful in past debugging
 				//System.out.println("Suppressing scoring for inactive feature: "+candPredictors[fi]); 
 				
+				// do nothing, but ++ the iterator the skip the positive counterpart in candPredictors 
+					// if this the [-] variant -- which it usually (actually, always?) is. 
 				fi += (UTILS.MARK_NEG == candPredictors[fi].charAt(0) ? 1 : 0) ; 
 				continue; 
 			}
@@ -2122,6 +2120,23 @@ public class ErrorAnalysis {
 			}	}
 	}
 	
+	/** inactiveFeatList  
+	 * 
+	 * @param samp -- lexicon working with
+	 * @return list of features [(+/-)feat] that do not vary within the sample. 
+	 * 		@note that at present this counts unspecified as not being unequal to + or -
+	 * 			and thus grounds for removal
+	 * 			thus features like [delrel] and [stres] may not ever be treated as inactive
+	 * 			@todo consider fixing that so that UNSPEC and [-] do NOT get treated as equal. 
+	 */
+	private List<String> inactiveFeatList(Lexicon samp)
+	{
+		ArrayList<String> out = new ArrayList<String>(); 
+		for (String fbi : featsByIndex)
+		{	out.add(UTILS.MARK_POS+fbi); out.add(UTILS.MARK_NEG+fbi);	}
+		return rmvFeatsActiveInSample(out,samp); 
+	}
+	
 	/** rmvFeatsActiveInSample
 	 *
 	/* Used on subsamples to form the inactiveFeats lists for the subsample, which may be smaller,
@@ -2130,6 +2145,7 @@ public class ErrorAnalysis {
 	/* @param sample -- lexicon we are looking through. 
 	 * @return list of inactive feats that has been modified in this way.
 	 * 			(will include the values that the feature CONSTANTLY has: e.g. -splng if all segments are -splng. )  
+	 * @beware -- will be limited to feats in @param earlier_inactive_list -- may need to reinitialize that. 
 	 */
 	public List<String> rmvFeatsActiveInSample(List<String> earlier_inactive_list, Lexicon sample)
 	{
@@ -2184,4 +2200,6 @@ public class ErrorAnalysis {
 		}
 		return out; 
 	}
+	
+
 }
