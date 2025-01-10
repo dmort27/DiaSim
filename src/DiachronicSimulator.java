@@ -1077,10 +1077,13 @@ public class DiachronicSimulator {
 					resp.replace("\n", "");
 					
 					if (resp.toLowerCase().equals("keep"))	resp = "Keep"; 
-					if (!validOptions.contains(resp) && resp.length() > 1)
+					if (!validOptions.contains(resp) && resp.length() > 1) { 
 						if (resp.charAt(0) == 'r' && "0123456789".contains(resp.charAt(1)+""))
 							resp = "R"+resp.substring(1); 
-					
+						if (validOptions.contains(resp.substring(0,1).toUpperCase()+resp.substring(1).toLowerCase()))
+							resp = resp.substring(0,1).toUpperCase() + resp.substring(1).toLowerCase();
+					}
+										
 					chosen = validOptions.contains(resp); 
 					if(!chosen)
 					{
