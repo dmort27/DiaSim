@@ -31,10 +31,13 @@ public class UTILS {
 	public final static char DISJUNCT_DELIM = ';'; 
 	public final static String OUT_GRAPH_FILE_TYPE = ".csv"; 
 	public final static String ABSENT_INDIC = "--", ABSENT_REPR = "{ABSENT}"; 
-	public final static String UNATTD_INDIC = ">*", UNATTD_REPR = "{UNATTESTED}"; 
+	public final static String UNATTD_GOLD_INDIC = ">*", UNATTD_GOLD_REPR = "{UNATTESTED}"; 
 		// the -INDIC items are the strings used in lexicon files provided by the user and processed by the system
 		// whereas the -REPR items are the internal representation within the Etymon subclasses.
-	public final static List<String> PSEUDO_ETYM_REPRS = Arrays.asList(ABSENT_REPR, UNATTD_REPR); 	public final static int maxAutoCommentWidth = 150;
+			// the latter are for unattested GOLD lexicon items -- i.e. those not included in diagnostic analysis
+			// i.e. NOT unattested reconstructions!
+	public final static List<String> PSEUDO_ETYM_REPRS = Arrays.asList(ABSENT_REPR, UNATTD_GOLD_REPR); 	
+	public final static int maxAutoCommentWidth = 150;
 	public static final int PRINTERVAL = 100; 
 	
 	//IPA symbol and feature related variables. 
@@ -1261,7 +1264,7 @@ public class UTILS {
 	/** 
 	 * given String @param toLexem
 	 * @return its representation as a Etymon containing a sequence of Phone instances
-	 * TODO note we assume the phones are separated by ()PH_DELIM (presumably ' ') 
+	 * NOTE we assume the phones are separated by ()PH_DELIM (presumably ' ') 
 	 * TODO still need to debug the use of diacritics here. 
 	 * TODO when do that, make sure to update the counterpart in SimulationTester.
 	 * this still bears the name LexPhon in its name even though the class LexPhon was renamed Etymon on 2 July 2023  
@@ -1275,6 +1278,14 @@ public class UTILS {
 		
 		if (PSEUDO_ETYM_REPRS.contains(toLex))
 			return new PseudoEtymon(toLex);
+
+		boolean toLexIsReconstructed = false; 
+		if (toLex.charAt(0) == '*') { 
+			toLexIsReconstructed = true ; 
+			if ( toLexem.startsWith("*"+PH_DELIM) )
+				toLexem = toLexem.substring(("*"+PH_DELIM).length()); 
+			else	toLexem = toLexem.substring(1); 
+		}
 		
 		String[] toPhones = toLexem.trim().split(""+PH_DELIM);
 		
@@ -1310,7 +1321,7 @@ public class UTILS {
 				phones.add(new Phone(phoneSymbToFeatsMap.get(toPhone), featIndices, phoneSymbToFeatsMap));
 			}
 		}
-		return new Etymon(phones);
+		return new Etymon(phones, toLexIsReconstructed);
 	}
 	
 	// returns list of all diacritics found in symbol. Empty string if none found. 

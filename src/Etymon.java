@@ -21,8 +21,11 @@ public class Etymon {
 	protected HashMap<String,String> morphSynSpecs; 
 	protected double frequency; // token frequency, if present; else -1 (which is default).
 	protected List<String> domains; // semantic domains 
+	protected boolean reconstructed; //* true if unattested, but considered for stats. 
+		// i.e. forward reconstructed states OR INCLUDED but unattested backward reconstructed states (e.g. proto-Indo-European forms)
+		// Not to be confused with absent etyma, including absent unattested etyma not to be considered in diagnostics.  
 	
-	public Etymon(List<SequentialPhonic> pR)
+	public Etymon(List<SequentialPhonic> pR, boolean reconstr)
 	{
 		if (pR.size() != 0) //not an absent or unattested etymon (PseudoEtymon)
 		{	
@@ -37,6 +40,7 @@ public class Etymon {
 		this.morphSynSpecs = new HashMap<String,String>(); 
 		this.frequency = -1.0; 
 		this.domains = new ArrayList<String>(); 
+		reconstructed = reconstr; 
 	}
 	
 	public List<SequentialPhonic> getPhonologicalRepresentation()
@@ -96,6 +100,7 @@ public class Etymon {
 	public String toString()
 	{
 		String output = "";
+		if (reconstructed)	output += "*"; 
 		for (SequentialPhonic ph : phonRep)
 			output += ph.print(); 
 		return output; 
@@ -107,7 +112,7 @@ public class Etymon {
 		// whereas print only prints the phones involved
 	public String print() 
 	{
-		String output = "/"; 
+		String output = (!reconstructed ? "" : "*") + "/" ; 
 		for (SequentialPhonic ph : phonRep)
 			if (ph.getType().equals("phone"))	output += ph.print(); 
 		return output + "/"; 
@@ -118,6 +123,7 @@ public class Etymon {
 	public boolean hasMorphSynSpecs()	{	return morphSynSpecs.size() > 0;	} 
 	public boolean frequencyIsSpecified()	{	return frequency != -1.0;	}
 	public boolean hasDomains()	{	return domains.size() > 0 ; 	}
+	public boolean isReconstructed()	{	return reconstructed;	}
 
 	public String getFormID() {	return formID;	} 
 	
@@ -218,6 +224,8 @@ public class Etymon {
 	{	morphSynSpecs = new HashMap<String, String> (newSpecs);	}
 	
 	public void setFrequency(double freq)	{	this.frequency = freq; 	}
+	
+	public void setReconstructed(boolean setting)	{	this.reconstructed = setting; }
 
 	public void addDomain(String domain) {
 		this.domains.add(domain);

@@ -31,7 +31,8 @@ public class Lexicon {
 			if (!UTILS.etymonIsPresent(theWords[wi]))
 				theWordList[wi] = new PseudoEtymon(theWords[wi].print()) ;
 			else
-				theWordList[wi] = new Etymon(theWords[wi].getPhonologicalRepresentation());
+				theWordList[wi] = new Etymon(theWords[wi].getPhonologicalRepresentation(), 
+						theWords[wi].isReconstructed());
 		}
 	}
 	
@@ -84,7 +85,7 @@ public class Lexicon {
 		{
 			if(theWordList[wli].print().equals(UTILS.ABSENT_REPR))	
 				wordsChanged[wli] = false;
-			else if (theWordList[wli].print().equals(UTILS.UNATTD_REPR))
+			else if (theWordList[wli].print().equals(UTILS.UNATTD_GOLD_REPR))
 				throw new RuntimeException("Alert: tried to implement a rule on a PseudoEtymon instance (index = "+wli+"). Check this.");
 			
 			if(theWordList[wli].applyRule(rule))	wordsChanged[wli] = true; 
@@ -183,6 +184,16 @@ public class Lexicon {
 		return count;
 	}
 	
+	//sets all present etyma to be marked (*) as reconstructed. No need to set absent words as such -- nothing to "attest". 
+		// reconstructions from forward or (supplied) backward reconstruction are to be compared in analysis
+			// -- but etyma "not attested" (i.e., not available) in gold lexica are not.
+	public void markEtymaReconstructed()
+	{
+		for (int eti = 0; eti < theWordList.length; eti++)
+			if (!theWordList[eti].print().equals(UTILS.ABSENT_REPR))
+				theWordList[eti].setReconstructed(true);
+	}
+	
 	/**
 	 * update which phones are absent (not yet in language or fell out of use) 
 	 * based on whether they are absent or not in the latest column in lexicon file. 
@@ -204,7 +215,7 @@ public class Lexicon {
 		
 		for (int wi = 0 ; wi < theLen ; wi++)
 		{	
-Etymon et_here = etymaInColumn[wi]; 
+			Etymon et_here = etymaInColumn[wi]; 
 			
 			// if the etymon is still absent in the lexicon being CFR-d, but present in the stage spec'd forms..
 				// ... then insert it! 	
@@ -216,7 +227,7 @@ Etymon et_here = etymaInColumn[wi];
 							* whereby uses unattested indicator in lexicon files (currently ">*") 
 							*  to "continue" the absence of an etymon */ 
 					theWordList[wi] = 
-						new Etymon(et_here.getPhonologicalRepresentation());
+						new Etymon(et_here.getPhonologicalRepresentation(),false);
 			}}
 		
 			// remove from lexicon if it is present and we encounter indication it is now absent 
@@ -239,7 +250,7 @@ Etymon et_here = etymaInColumn[wi];
 		if (!UTILS.etymonIsPresent(origin))	return new PseudoEtymon(origin.print()); 
 		
 		Etymon dolly = new Etymon (
-				new ArrayList<SequentialPhonic> (origin.getPhonologicalRepresentation())); 
+				new ArrayList<SequentialPhonic> (origin.getPhonologicalRepresentation()), origin.isReconstructed()); 
 		
 		dolly.setLemma(origin.getLemma());
 		dolly.setLexClass(origin.getLexClass());
@@ -278,7 +289,7 @@ Etymon et_here = etymaInColumn[wi];
 	{
 		int cnt = 0;
 		for (Etymon lex: theWordList)
-			if (lex.print().equals(UTILS.UNATTD_REPR))	cnt += 1;
+			if (lex.print().equals(UTILS.UNATTD_GOLD_REPR))	cnt += 1;
 		return cnt;
 	}
 	

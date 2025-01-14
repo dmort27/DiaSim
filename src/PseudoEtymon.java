@@ -11,10 +11,20 @@ import java.util.HashMap;
  *				if it is absent from the beginning, 
  *					it remains such until phonological material is provided in a later column, 
  *						and this will be replaced with a "real" Etymon instance.
- *		UNATTESTED -- for use ONLY in gold stages or stages for insertion/removal of vocab
+ *		UNATTESTED (GOLD) -- for use ONLY in gold stages or stages for insertion/removal of vocab
+ *					(this was the case even before "reconstructed *" was added to the parent Etymon class!)
  *			this means the form continues to be inherited, but is not attested at the stage
  *				indicator in lexicon file: ">*" (as of July 2023)
- * 
+ *			NOTE THAT THIS IS TO BE DISTINGUISHED FROM NOT ATTESTED IN INTERNAL USAGE IN Etymon (as inherited) which just governs display! 
+ * 				(all of these are treated as "attested" because we don't prefix them with an extra asterisk!) 
+ * 		variables in UTILS relevant: 	public final static String ABSENT_INDIC = "--", ABSENT_REPR = "{ABSENT}"; 
+			public final static String UNATTD_GOLD_INDIC = ">*", UNATTD_GOLD_REPR = "{UNATTESTED}"; 
+				// the -INDIC items are the strings used in lexicon files provided by the user and processed by the system
+				// whereas the -REPR items are the internal representation within the Etymon subclasses.
+					// the latter are for unattested GOLD lexicon items -- i.e. those not included in diagnostic analysis
+					// i.e. NOT unattested reconstructions!
+				public final static List<String> PSEUDO_ETYM_REPRS = Arrays.asList(ABSENT_REPR, UNATTD_GOLD_REPR); 
+			also hte method UTILS.etymonIsPresent
  * @author Clayton Marr
  */
 public class PseudoEtymon extends Etymon {
@@ -23,7 +33,7 @@ public class PseudoEtymon extends Etymon {
 	
 	public	PseudoEtymon(String repr)
 	{
-		super(new ArrayList<SequentialPhonic>());
+		super(new ArrayList<SequentialPhonic>(),false);
 		this.representation = ""+repr; 
 		
 		// guard rail: 

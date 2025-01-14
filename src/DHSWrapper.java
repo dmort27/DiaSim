@@ -620,7 +620,12 @@ public class DHSWrapper {
 						Etymon query = null;
 						boolean validLexPhon = true;
 						try {
-							query = new Etymon(fac.parseSeqPhSeg(entry));
+							boolean reconstructed = false; 
+							if (entry.charAt(0) == '*') { 
+								entry = entry.substring(1); 
+								reconstructed = true;
+							}
+							query = new Etymon(fac.parseSeqPhSeg(entry),reconstructed);
 						} catch (Exception e) {
 							System.out
 									.println("Error: could not parse entered phone string. "

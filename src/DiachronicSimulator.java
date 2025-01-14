@@ -1234,8 +1234,13 @@ public class DiachronicSimulator {
 							// TODO remember to change it saying "space" if that is ever changed.
 						resp = inpu.nextLine().replace("\n",""); 
 						Etymon query = null;
+						boolean reconstructed = false; 
+						if (resp.charAt(0) == '*') {
+							reconstructed = true; 
+							resp = resp.substring(1); 
+						}
 						try {
-							query = new Etymon(fac.parseSeqPhSeg(resp));
+							query = new Etymon(fac.parseSeqPhSeg(resp),reconstructed);
 						}
 						catch (Exception e){
 							System.out.println("Error: could not parse entered phone string. Returning to query menu.");
