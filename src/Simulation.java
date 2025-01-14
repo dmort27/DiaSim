@@ -43,6 +43,7 @@ public class Simulation {
 	{
 		inputLexicon = new Lexicon(inputForms); 
 		currLexicon = new Lexicon(inputForms); 
+		currLexicon.markEtymaReconstructed();
 		CASCADE = new ArrayList<SChange>(casc); 
 		TOTAL_STEPS = CASCADE.size(); 
 		goldOutput = false; 
@@ -196,6 +197,7 @@ public class Simulation {
         			//TODO will need to handle this somewhere else -- but where, and how to ensure correct behavior here? 
         		//TODO also need to handle "black stages" which just consist of an updateAbsence call effectively,
         				// not comparison of reconstructed vs. observed forms...?
+        		currLexicon.markEtymaReconstructed(); 
         		goldStageInd++;
         	}
         	else //black stage
