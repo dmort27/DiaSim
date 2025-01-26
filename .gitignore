@@ -6,3 +6,4 @@ build/
 .settings/
 build.xml
 bin/
+hs_err_pid46232.log

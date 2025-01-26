@@ -1441,10 +1441,7 @@ public class ErrorAnalysis {
 	
 	private String append_space_to_x (String in, int x)
 	{
-		if (in.length() >= x)	return in;
-		String out = in + " ";
-		while (out.length() < x)	out += " ";
-		return out;
+		return UTILS.append_space_to_x (in, x); 
 	}
 	
 	private boolean containsSPh(SequentialPhonic cand, List<SequentialPhonic> sphlist)
@@ -2105,20 +2102,40 @@ public class ErrorAnalysis {
 		return pivotSet;
 	}
 	
-	public void printFourColGraph(Lexicon inpLex, boolean errorsOnly)
+	/** printStagedGraph 
+	 *  -- print graph where for each etymon, its form at a certain stage (incl pivot point if specified) is printed... 
+	 * @param lexicolumns -- in order, lexica for which each etymon's form will be printed
+	 * @param errorsOnly -- true if printing graph for only etyma that mismatch gold forms in their reocnstructed results.
+	 * NOTE: last index will be @global @param TOTAL_ETYMA -- if lexica have different sizes, could cause problems
+	 * TODO : note that this assumes unchanging indices for each etymon in each lexicon!
+	 * 	 
+	 * */
+	public void printStagedGraph(List<Lexicon> lexicolumns, boolean errorsOnly)
 	{
-		Etymon[] inpWds = inpLex.getWordList(); 
-		for(int i = 0; i < inpWds.length; i++) {
+		for (int i = 0; i < TOTAL_ETYMA; i++)
+		{
 			if (errorsOnly ? IN_SUBSAMP[i] && !isHit[i] : IN_SUBSAMP[i])
 			{
 				System.out.print(append_space_to_x(i+",",6)+"| ");
-				System.out.print(append_space_to_x(inpWds[i].toString(), 19) + "| ");
-				if (pivotSet)
-					System.out.print(append_space_to_x(PIV_PT_LEX.getByID(i).toString(),19)+"| ");
-				System.out.print(append_space_to_x(RES.getByID(i).toString(),19)+"| ");
-				System.out.print(GOLD.getByID(i)+"\n");
-			}	}
+				for (int j = 0 ; j < lexicolumns.size() - 1 ; j++) {
+					System.out.print(append_space_to_x(lexicolumns.get(j).getByID(i).toString(), 19) + "| ");  }
+				System.out.println(lexicolumns.get(lexicolumns.size()-1).getByID(i));
+			}
+		}
 	}
+	
+	// errorsOnly -- true if printing graph for only etyma that mismatch gold forms in their reocnstructed results.
+	public void printFourColGraph(Lexicon inpLex, boolean errorsOnly)
+	{
+		List<Lexicon> stagesToPrint = new ArrayList<Lexicon>(); 
+		stagesToPrint.add(inpLex);
+		if (pivotSet) { stagesToPrint.add(PIV_PT_LEX); }
+		stagesToPrint.add(RES); 
+		stagesToPrint.add(GOLD); 
+		printStagedGraph(stagesToPrint, errorsOnly);
+	}
+	
+	
 	
 	/** inactiveFeatList  
 	 * 

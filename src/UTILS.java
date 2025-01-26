@@ -586,7 +586,7 @@ public class UTILS {
 	}
 	
 	
-	//extract order of stages so that we don't end up with ``flips'' in the relative ordering between stages
+	//extract order of intermediate stages so that we don't end up with ``flips'' in the relative ordering between stages
 		// in the case that they end up in the same
 		// chronological "moment" between rule operation steps (TODO need to clarify this a bit further maybe?) 
 	// @param black_at_input -- true to execute bandaid in scenario where user declared name of input stage as a black stage. 
@@ -1634,6 +1634,14 @@ public class UTILS {
 	public static String stripEnds(String inp)
 	{
 		return inp.replaceAll("^[ \t]+|[ \t]+$","");
+	}
+	
+	public static String append_space_to_x (String in, int x)
+	{
+		if (in.length() >= x)	return in;
+		String out = in + " ";
+		while (out.length() < x)	out += " ";
+		return out;
 	}
 		
 }

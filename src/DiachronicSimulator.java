@@ -37,6 +37,7 @@ public class DiachronicSimulator {
 	
 	private static Lexicon[] columnedBlackStageLexica; 
 		// TODO lexica for purposes of insertion and removal of etyma only.
+		// TODO currently still unimplemented
 		// index will effectively be # columned stage index - # gold stage index 
 	private static int[] goldStageInstants, blackStageInstants, columnedStageInstants; // i.e. the index of custom stages in the ordered rule set
 	private static boolean goldStagesSet, blackStagesSet, columnedStagesSet; 
@@ -248,6 +249,26 @@ public class DiachronicSimulator {
 		if (VERBOSE)	System.out.println("Diachronic rules extracted. "); 
 		
 		stageOrdering = UTILS.extractStageOrder(cascFileLoc, !inputName.equalsIgnoreCase("input")); 
+		
+		NUM_COLUMNED_STAGES = (goldStagesSet || blackStagesSet) ? NUM_GOLD_STAGES + NUM_BLACK_STAGES : 0 ;
+		columnedStagesSet = NUM_COLUMNED_STAGES > 0; 
+		
+		if (NUM_COLUMNED_STAGES != stageOrdering.length)
+			throw new Error("Error: mismatch in columned stage count ("+NUM_COLUMNED_STAGES+") and size of stageOrdering ("+stageOrdering.length+")");
+		
+		if (columnedStagesSet)
+		{
+			columnedStageNames = new String[NUM_COLUMNED_STAGES];
+			columnedStageInstants = new int[NUM_COLUMNED_STAGES]; 
+			for (int csi = 0 ; csi < NUM_COLUMNED_STAGES; csi++)
+			{
+				String curr_stage_pointer = stageOrdering[csi]; 
+				boolean isGold = curr_stage_pointer.charAt(0) == 'g'; 
+				int stageNumber = Integer.parseInt(curr_stage_pointer.substring(1)); 
+				columnedStageNames[csi] = (isGold ? goldStageNames : blackStageNames)[stageNumber];
+				columnedStageInstants[csi] = (isGold ? goldStageInstants : blackStageInstants)[stageNumber]; 
+			}
+		}
 		
 		// flag a warning for dangerous stage names
 		if (goldStagesSet)
@@ -539,11 +560,7 @@ public class DiachronicSimulator {
 		
 		extractCascade(theFactory);
 		// this inits gold and black stage variables because of how they are flagged in the cascade
-		// but column variables are only determined in the lexicon file, so they have not yet been initialized. 
 	
-		//start off by assuming they are equal to the gold stages. 
-		NUM_COLUMNED_STAGES = 0 + NUM_GOLD_STAGES; 
-		
 		//now input lexicon 
 		//collect init lexicon ( and gold for stages or final output if so specified) 
 		//copy init lexicon to "evolving lexicon" 
@@ -1375,8 +1392,10 @@ public class DiachronicSimulator {
 					System.out.print("What results would you like to check? Please enter the appropriate number:\n"
 						+ "| 0 : Print stats (at evaluation point) (for subset lexicon if specified)~~~~~~~~~~~~~|\n"
 						+ "| 1 : Print all corresponding forms (init(,pivot),res,gold) (for subset if specified) |\n"
-						+ "| 2 : Print all corresponding forms as above for all mismatched etyma                 |\n"
+						+ "| 2 : Print all corresponding forms as above for all errant etyma                     |\n"
 						+ "| 3 : Print all mismatched forms only at eval point (for subset if specified)         |\n"
+					    + "| 4 : Print all corresponding forms at each stage (for subset if specified)           |\n"
+						+ "| 5 : Print all corresponding forms for errant etyma as above (for subset if spec'd)  |\n"
 						+ "| 9 : Exit this menu._________________________________________________________________|\n");  
 					
 					resp = ""; 
@@ -1385,18 +1404,66 @@ public class DiachronicSimulator {
 					
 					resp = resp.substring(0,1);
 					
+					if("45".contains(resp) && !resp.contains("45") && NUM_GOLD_STAGES == 0 && NUM_BLACK_STAGES == 0) {
+						resp = resp.equals("4") ? "1" : "2"; 
+						//TODO debugging
+						System.out.println("... no stages set..."); 
+					}
+					
 					if(resp.equals("0"))
 					{
 						System.out.println("Printing stats:"+ (ea.isFiltSet() ? " for filter "+filterSeq.toString()+ " at "+pivPtName : "" ));
 						System.out.println(UTILS.getAccuracyReport(ea));
 					}
-					else if("12".contains(resp))
+					else if("12".contains(resp) && !resp.contains("12"))
 					{
 						boolean is2 = "2".equals(resp); 
 						System.out.println("Printing all "+(is2 ? "mismatched ":"")+
 								"etyma: \n#,\t| "+inputName+" | " + (ea.isPivotSet() ? "PIV: "+pivPtName+" | " : "")
 								+" Result | Gold"); 
 						ea.printFourColGraph(theSimulation.getInput(), is2);	
+					}
+					else if("45".contains(resp))
+					{	
+						boolean errsOnly = "5".equals(resp); 
+						String headerRow = "     |"+UTILS.append_space_to_x(inputName, 19)+"|";
+						List<Lexicon> lexCols = new ArrayList<Lexicon>();
+						lexCols.add(theSimulation.getInput()); 
+						
+						boolean pivot_inserted = false; 
+						if ("InGoldOut".contains(pivPtName)) pivot_inserted = true; 
+						
+						for (int cosi = 0 ; cosi < NUM_COLUMNED_STAGES; cosi++) {
+							if (ea.isPivotSet() && !pivot_inserted)
+							{
+								if (pivPtLoc < columnedStageInstants[cosi])
+								{
+									headerRow += UTILS.append_space_to_x("PIV@"+pivPtName, 19)+"|";
+									lexCols.add(pivPtLex);
+									pivot_inserted = true; 
+								}
+							}
+							
+							String currSt = stageOrdering[cosi]; 
+							boolean goldHere = currSt.charAt(0) == 'g'; 
+							int stageNum = Integer.parseInt(currSt.substring(1)); 
+							headerRow += UTILS.append_space_to_x(
+									(goldHere ? goldStageNames : blackStageNames)[stageNum], 19) + "|"; 
+							lexCols.add(theSimulation.getStageResult(goldHere, stageNum)); 
+						}
+						
+						if (ea.isPivotSet() && !pivot_inserted) {
+							headerRow += UTILS.append_space_to_x("PIV@"+pivPtName, 19)+"|";
+							lexCols.add(pivPtLex);
+							pivot_inserted = true; 
+						}
+						
+						headerRow += " Result | Gold"; 
+						lexCols.add(theSimulation.getCurrentResult()); 
+						lexCols.add(theSimulation.getGoldOutput()); 
+						System.out.println("Printing all "+(errsOnly ? "mismatched ":"")+
+								"etyma: \n#"+headerRow);
+						ea.printStagedGraph(lexCols, errsOnly);
 					}
 					else if(resp.equals("3"))
 					{
